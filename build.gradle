@@ -1,0 +1,36 @@
+apply plugin: 'java'
+
+defaultTasks 'fatJar'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+version = '0.0.1'
+
+sourceSets {
+    main.java.srcDirs 'src'
+    main.resources.srcDirs 'res'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.luaj:luaj-jse:3.0.1'
+    implementation files('libs/bitmap.jar')
+}
+
+task source(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'vulc.luasandbox.Game'
+    }
+
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
