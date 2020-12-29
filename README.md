@@ -1,5 +1,5 @@
 # Lua Script Sandbox
-A sandbox environment to for Lua Scripts.
+A sandbox environment for Lua Scripts.
 
 ## How to start
 Create a folder `scripts` and put a file `main.lua` inside it.\
