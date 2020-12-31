@@ -193,7 +193,6 @@ public class Sandbox extends Canvas implements Runnable {
 
 		INSTANCE.init();
 		new Thread(INSTANCE).run();
-
 	}
 
 }
