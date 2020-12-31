@@ -9,32 +9,48 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.Reader;
+
+import javax.swing.KeyStroke;
 
 import vulc.bitmap.Bitmap;
 import vulc.bitmap.IntBitmap;
 import vulc.bitmap.font.Font;
+import vulc.luasandbox.input.InputHandler;
+import vulc.luasandbox.input.InputHandler.Key;
 import vulc.luasandbox.script.ScriptCore;
+import vulc.vdf.VDFObject;
 
-public class Game extends Canvas implements Runnable {
+public class Sandbox extends Canvas implements Runnable {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final Game INSTANCE = new Game();
+	public static final String SCRIPT_FOLDER = "./scripts/";
 
-	public static final int WIDTH = 256, HEIGHT = 256;
-	public static final Bitmap<Integer> SCREEN = new IntBitmap(WIDTH, HEIGHT);
+	private static final Sandbox INSTANCE = new Sandbox();
+	public static final VDFObject CONFIG = new VDFObject();
 
-	private static final int SCALE = 2;
-	private static final BufferedImage IMG = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
-	private static final int[] PIXELS = ((DataBufferInt) IMG.getRaster().getDataBuffer()).getData();
+	// keys
+	private static final InputHandler INPUT_HANDLER = new InputHandler();
+	private static final Key RESTART_SCRIPT = INPUT_HANDLER.new Key();
+
+	public static int width, height;
+	private static int scale;
+
+	public static Bitmap<Integer> screen;
+
+	private static BufferedImage img;
+	private static int[] pixels;
 
 	private static int ticks = 0;
 
 	public void run() {
 		int frames = 0;
 
-		long tps = 60;
-		long fps = 60;
+		long tps = CONFIG.getInt("tps");
+		long fps = CONFIG.getInt("fps");
 
 		long nanosPerTick = 1_000_000_000 / tps;
 		long nanosPerFrame = 1_000_000_000 / fps;
@@ -81,14 +97,49 @@ public class Game extends Canvas implements Runnable {
 		}
 	}
 
+	private void readConfig() {
+		try(Reader in = new BufferedReader(new FileReader(SCRIPT_FOLDER + "config.vdf"))) {
+			CONFIG.parse(in);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		// screen config
+		VDFObject screenConfig = CONFIG.getObject("screen");
+
+		width = screenConfig.getInt("width");
+		height = screenConfig.getInt("height");
+		scale = screenConfig.getInt("scale");
+
+		screen = new IntBitmap(width, height);
+
+		img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		pixels = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+	}
+
 	private void init() {
-		SCREEN.setFont(new Font(Game.class.getResourceAsStream("/tinyfont.fv4")));
+		requestFocus();
+		INPUT_HANDLER.init(this);
+
+		// register key bindings
+		VDFObject keyBindings = CONFIG.getObject("keyBindings");
+		RESTART_SCRIPT.setKeyBinding(InputHandler.KEYBOARD,
+		                             KeyStroke.getKeyStroke(keyBindings.getString("restartScript")).getKeyCode());
+
+		screen.setFont(new Font(Sandbox.class.getResourceAsStream("/tinyfont.fv4")));
 
 		ScriptCore.init();
 	}
 
 	private void tick() {
+		INPUT_HANDLER.tick();
+
 		ScriptCore.tick.call();
+
+		if(RESTART_SCRIPT.pressed()) {
+			screen.clear(0x000000);
+			ScriptCore.init();
+		}
 	}
 
 	private void render() {
@@ -100,21 +151,21 @@ public class Game extends Canvas implements Runnable {
 
 		ScriptCore.render.call();
 
-		for(int i = 0; i < PIXELS.length; i++) {
-			PIXELS[i] = SCREEN.raster.getPixel(i);
+		for(int i = 0; i < pixels.length; i++) {
+			pixels[i] = screen.raster.getPixel(i);
 		}
 
 		Graphics g = bs.getDrawGraphics();
-		g.drawImage(IMG, 0, 0, WIDTH * SCALE, HEIGHT * SCALE, null);
+		g.drawImage(img, 0, 0, width * scale, height * scale, null);
 		g.dispose();
 		bs.show();
 	}
 
 	private Frame getFrame() {
-		Frame frame = new Frame();
+		Frame frame = new Frame(CONFIG.getString("title"));
 
 		// add the canvas
-		Dimension size = new Dimension(WIDTH * SCALE, HEIGHT * SCALE);
+		Dimension size = new Dimension(width * scale, height * scale);
 		setMaximumSize(size);
 		setPreferredSize(size);
 		setMinimumSize(size);
@@ -135,11 +186,14 @@ public class Game extends Canvas implements Runnable {
 	}
 
 	public static void main(String[] args) {
+		INSTANCE.readConfig();
+
 		Frame frame = INSTANCE.getFrame();
 		frame.setVisible(true);
 
 		INSTANCE.init();
 		new Thread(INSTANCE).run();
+
 	}
 
 }

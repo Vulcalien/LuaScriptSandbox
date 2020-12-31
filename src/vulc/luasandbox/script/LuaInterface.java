@@ -11,7 +11,7 @@ import org.luaj.vm2.Varargs;
 import org.luaj.vm2.lib.OneArgFunction;
 import org.luaj.vm2.lib.VarArgFunction;
 
-import vulc.luasandbox.Game;
+import vulc.luasandbox.Sandbox;
 
 public final class LuaInterface {
 
@@ -23,8 +23,8 @@ public final class LuaInterface {
 	protected static void init(Globals env) {
 		LuaInterface.env = env;
 
-		env.set("scr_w", Game.WIDTH);
-		env.set("scr_h", Game.HEIGHT);
+		env.set("scr_w", Sandbox.width);
+		env.set("scr_h", Sandbox.height);
 
 		// utils
 		env.set("loadscript", new loadscript());
@@ -43,7 +43,7 @@ public final class LuaInterface {
 	private static class loadscript extends OneArgFunction {
 		public LuaValue call(LuaValue script) {
 			try(InputStream in =
-			        new BufferedInputStream(new FileInputStream(ScriptCore.SCRIPT_FOLDER + script.toString()))) {
+			        new BufferedInputStream(new FileInputStream(Sandbox.SCRIPT_FOLDER + script.toString()))) {
 				env.load(in, "@" + script, "t", env).call();
 			} catch(IOException e) {
 				e.printStackTrace();
@@ -55,14 +55,14 @@ public final class LuaInterface {
 	// screen
 	private static class settransparent extends OneArgFunction {
 		public LuaValue call(LuaValue color) {
-			Game.SCREEN.setTransparent(color.checkint());
+			Sandbox.screen.setTransparent(color.checkint());
 			return NIL;
 		}
 	}
 
 	private static class clear extends OneArgFunction {
 		public LuaValue call(LuaValue color) {
-			Game.SCREEN.clear(color.checkint());
+			Sandbox.screen.clear(color.checkint());
 			return NIL;
 		}
 	}
@@ -75,7 +75,7 @@ public final class LuaInterface {
 			int w = args.arg(4).isnil() ? 1 : args.arg(4).checkint();
 			int h = args.arg(5).isnil() ? 1 : args.arg(5).checkint();
 
-			Game.SCREEN.fill(x, y, x + w - 1, y + h - 1, color);
+			Sandbox.screen.fill(x, y, x + w - 1, y + h - 1, color);
 			return NIL;
 		}
 	}
@@ -87,7 +87,7 @@ public final class LuaInterface {
 			int x = args.arg(3).checkint();
 			int y = args.arg(4).checkint();
 
-			Game.SCREEN.write(text, color, x, y);
+			Sandbox.screen.write(text, color, x, y);
 			return NIL;
 		}
 	}

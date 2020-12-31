@@ -17,12 +17,12 @@ import org.luaj.vm2.lib.TableLib;
 import org.luaj.vm2.lib.jse.JseBaseLib;
 import org.luaj.vm2.lib.jse.JseMathLib;
 
+import vulc.luasandbox.Sandbox;
+
 public final class ScriptCore {
 
 	private ScriptCore() {
 	}
-
-	public static final String SCRIPT_FOLDER = "./scripts/";
 
 	public static LuaFunction tick;
 	public static LuaFunction render;
@@ -57,7 +57,7 @@ public final class ScriptCore {
 		LuaInterface.init(env);
 
 		// read main.lua
-		try(InputStream in = new BufferedInputStream(new FileInputStream(SCRIPT_FOLDER + "main.lua"))) {
+		try(InputStream in = new BufferedInputStream(new FileInputStream(Sandbox.SCRIPT_FOLDER + "main.lua"))) {
 			env.load(in, "@main.lua", "t", env).call();
 		} catch(IOException e) {
 			e.printStackTrace();

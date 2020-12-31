@@ -5,7 +5,7 @@ defaultTasks 'fatJar'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-version = '0.0.1'
+version = '0.0.2'
 
 sourceSets {
     main.java.srcDirs 'src'
@@ -19,6 +19,7 @@ repositories {
 dependencies {
     implementation 'org.luaj:luaj-jse:3.0.1'
     implementation files('libs/bitmap.jar')
+    implementation files('libs/VulcDataFormat-1.0.0.jar')
 }
 
 task source(type: Jar, dependsOn: classes) {
@@ -28,7 +29,7 @@ task source(type: Jar, dependsOn: classes) {
 
 task fatJar(type: Jar) {
     manifest {
-        attributes 'Main-Class': 'vulc.luasandbox.Game'
+        attributes 'Main-Class': 'vulc.luasandbox.Sandbox'
     }
 
     from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
