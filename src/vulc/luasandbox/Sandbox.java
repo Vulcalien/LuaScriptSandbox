@@ -9,9 +9,8 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.Reader;
+import java.io.File;
+import java.io.IOException;
 
 import javax.swing.KeyStroke;
 
@@ -98,9 +97,9 @@ public class Sandbox extends Canvas implements Runnable {
 	}
 
 	private void readConfig() {
-		try(Reader in = new BufferedReader(new FileReader(SCRIPT_FOLDER + "config.vdf"))) {
-			CONFIG.parse(in);
-		} catch(Exception e) {
+		try {
+			CONFIG.parse(new File(SCRIPT_FOLDER + "config.vdf"));
+		} catch(IOException e) {
 			e.printStackTrace();
 		}
 
