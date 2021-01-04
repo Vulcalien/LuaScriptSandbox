@@ -22,7 +22,7 @@ import vulc.luasandbox.input.InputHandler.Key;
 import vulc.luasandbox.script.ScriptCore;
 import vulc.vdf.VDFObject;
 
-public class Sandbox extends Canvas implements Runnable {
+public class Sandbox extends Canvas {
 
 	private static final long serialVersionUID = 1L;
 
@@ -44,19 +44,16 @@ public class Sandbox extends Canvas implements Runnable {
 	private static int[] pixels;
 
 	private static int ticks = 0;
+	private static int frames = 0;
 
-	public void run() {
-		int frames = 0;
-
+	public void runTick() {
 		long tps = CONFIG.getInt("tps");
-		long fps = CONFIG.getInt("fps");
+		long sleepTime = 2;
 
 		long nanosPerTick = 1_000_000_000 / tps;
-		long nanosPerFrame = 1_000_000_000 / fps;
 
 		long lastTime = System.nanoTime();
 		long unprocessedTime = 0;
-		long unrenderedTime = 0;
 
 		while(true) {
 			long now = System.nanoTime();
@@ -67,7 +64,6 @@ public class Sandbox extends Canvas implements Runnable {
 			else if(passedTime < 0) passedTime = 0;
 
 			unprocessedTime += passedTime;
-			unrenderedTime += passedTime;
 
 			while(unprocessedTime >= nanosPerTick) {
 				unprocessedTime -= nanosPerTick;
@@ -81,6 +77,33 @@ public class Sandbox extends Canvas implements Runnable {
 				}
 			}
 
+			try {
+				Thread.sleep(sleepTime);
+			} catch(InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void runRender() {
+		long fps = CONFIG.getInt("fps");
+		long sleepTime = 2;
+
+		long nanosPerFrame = 1_000_000_000 / fps;
+
+		long lastTime = System.nanoTime();
+		long unrenderedTime = 0;
+
+		while(true) {
+			long now = System.nanoTime();
+			long passedTime = now - lastTime;
+			lastTime = now;
+
+			if(passedTime > 1_000_000_000) passedTime = 1_000_000_000;
+			else if(passedTime < 0) passedTime = 0;
+
+			unrenderedTime += passedTime;
+
 			if(unrenderedTime >= nanosPerFrame) {
 				unrenderedTime %= nanosPerFrame;
 
@@ -89,7 +112,7 @@ public class Sandbox extends Canvas implements Runnable {
 			}
 
 			try {
-				Thread.sleep(8);
+				Thread.sleep(sleepTime);
 			} catch(InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -191,7 +214,8 @@ public class Sandbox extends Canvas implements Runnable {
 		frame.setVisible(true);
 
 		INSTANCE.init();
-		new Thread(INSTANCE).run();
+		new Thread(INSTANCE::runTick).start();
+		new Thread(INSTANCE::runRender).start();
 	}
 
 }
