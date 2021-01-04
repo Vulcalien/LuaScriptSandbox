@@ -70,11 +70,6 @@ public class Sandbox extends Canvas {
 
 				tick();
 				ticks++;
-
-				if(ticks % tps == 0) {
-					System.out.println(frames + " fps");
-					frames = 0;
-				}
 			}
 
 			try {
@@ -92,7 +87,7 @@ public class Sandbox extends Canvas {
 		long nanosPerFrame = 1_000_000_000 / fps;
 
 		long lastTime = System.nanoTime();
-		long unrenderedTime = 0;
+		long unprocessedTime = 0;
 
 		while(true) {
 			long now = System.nanoTime();
@@ -102,13 +97,49 @@ public class Sandbox extends Canvas {
 			if(passedTime > 1_000_000_000) passedTime = 1_000_000_000;
 			else if(passedTime < 0) passedTime = 0;
 
-			unrenderedTime += passedTime;
+			unprocessedTime += passedTime;
 
-			if(unrenderedTime >= nanosPerFrame) {
-				unrenderedTime %= nanosPerFrame;
+			if(unprocessedTime >= nanosPerFrame) {
+				unprocessedTime %= nanosPerFrame;
 
 				render();
 				frames++;
+			}
+
+			try {
+				Thread.sleep(sleepTime);
+			} catch(InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public void runPerformanceCheck() {
+		long sleepTime = 2;
+
+		long lastTime = System.nanoTime();
+		long unprocessedTime = 0;
+
+		while(true) {
+			long now = System.nanoTime();
+			long passedTime = now - lastTime;
+			lastTime = now;
+
+			if(passedTime > 1_000_000_000) passedTime = 1_000_000_000;
+			else if(passedTime < 0) passedTime = 0;
+
+			unprocessedTime += passedTime;
+
+			if(unprocessedTime >= 1_000_000_000) {
+				unprocessedTime -= 1_000_000_000;
+
+				System.out.println("oof: " + unprocessedTime);
+
+				System.out.println(ticks + " tps");
+				System.out.println(frames + " fps");
+
+				ticks = 0;
+				frames = 0;
 			}
 
 			try {
@@ -214,8 +245,10 @@ public class Sandbox extends Canvas {
 		frame.setVisible(true);
 
 		INSTANCE.init();
+
 		new Thread(INSTANCE::runTick).start();
 		new Thread(INSTANCE::runRender).start();
+		new Thread(INSTANCE::runPerformanceCheck).start();
 	}
 
 }
